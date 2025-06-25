@@ -1,0 +1,3 @@
+Flask
+python-dotenv
+# For SHA-256 watermarking, using hashlib (standard library, no install needed) 
