@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 
 FAKE_HONEYTOKEN_TEMPLATE = {
     "name": "John Doe",
@@ -14,5 +14,5 @@ def generate_honeytoken():
     """
     token = FAKE_HONEYTOKEN_TEMPLATE.copy()
     token["record_id"] = str(uuid.uuid4())
-    token["timestamp"] = datetime.utcnow().isoformat()
+    token["timestamp"] = datetime.now(UTC).isoformat()
     return token 

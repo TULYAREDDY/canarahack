@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 DEFAULT_POLICY_TEMPLATE = {
     "purpose": "",
@@ -11,7 +11,7 @@ def generate_policy(purpose, days_valid, region):
     """
     Generate policy metadata with expiry date and region.
     """
-    expiry = (datetime.utcnow() + timedelta(days=days_valid)).date().isoformat()
+    expiry = (datetime.now(UTC) + timedelta(days=days_valid)).date().isoformat()
     policy = DEFAULT_POLICY_TEMPLATE.copy()
     policy["purpose"] = purpose
     policy["expiry_date"] = expiry
