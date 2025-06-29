@@ -7,6 +7,10 @@ import ActivityLog from '../components/ActivityLog.jsx';
 import ConsentDashboard from '../components/ConsentDashboard.jsx';
 import PartnerDataRequest from '../components/PartnerDataRequest.jsx';
 import AdminPanel from '../components/AdminPanel.jsx';
+import PartnerTestPanel from '../components/PartnerTestPanel.jsx';
+import TrapInjector from '../components/TrapInjector.jsx';
+import PartnerDashboard from '../components/PartnerDashboard.jsx';
+import { AdminErrorBoundary } from '../components/AdminPanel.jsx';
 
 function Dashboard() {
   const [role, setRole] = useState('user');
@@ -100,8 +104,9 @@ function Dashboard() {
 
       {/* Admin View */}
       {role === 'admin' && adminAuth && (
-        <>
+        <AdminErrorBoundary>
           <AdminPanel addLog={addLog} />
+          <TrapInjector />
           <button onClick={downloadLogs} style={{ marginBottom: 16, padding: '0.5em 1em', background: '#e0e7ef', border: 'none', borderRadius: 6, fontWeight: 500 }}>
             Download Logs
           </button>
@@ -112,15 +117,14 @@ function Dashboard() {
           </div>
           <WatermarkForm addLog={addLog} onResult={handleWatermark} />
           <HoneytokenViewer addLog={addLog} onResult={handleHoneytoken} />
-          <PolicyBuilder addLog={addLog} onResult={handlePolicy} />
-        </>
+        </AdminErrorBoundary>
       )}
 
       {/* User View */}
       {role === 'user' && <ConsentDashboard />}
 
       {/* Partner View */}
-      {role === 'partner' && <PartnerDataRequest addLog={addLog} />}
+      {role === 'partner' && <PartnerDashboard />}
     </div>
   );
 }
