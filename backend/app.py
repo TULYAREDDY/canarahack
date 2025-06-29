@@ -12,6 +12,7 @@ from time import sleep
 from random import randint
 from utils.synthetic import generate_synthetic_data
 import re
+import hashlib
 
 app = Flask(__name__)
 CORS(app, 
@@ -46,6 +47,7 @@ trap_logs = []
 # --- STEP 5: Blocked partner-user combos ---
 blocked_partner_user = set()  # (partner_id, user_id)
 # --- END STEP 5 ---
+decode_log = []
 
 # 2️⃣ Logging function
 
@@ -77,18 +79,18 @@ def api_generate_watermark():
         log_access(request, "/generate_watermark", 401)
         return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
-    content = data.get('content')
     partner_id = data.get('partner_id')
     user_id = data.get('user_id')
-    if not content or not partner_id or not user_id:
+    timestamp = data.get('timestamp')
+    if not partner_id or not user_id or not timestamp:
         log_access(request, "/generate_watermark", 400)
-        return jsonify({"error": "Missing content, partner_id, or user_id"}), 400
+        return jsonify({"error": "Missing partner_id, user_id, or timestamp"}), 400
     # Consent check
     if not consent_state.get(user_id, {}).get("watermark", True):
         return jsonify({"error": "Consent denied for watermarking"}), 403
-    hash_value = generate_watermark(content, partner_id)
+    hash_value = generate_watermark(partner_id, timestamp, user_id)
     log_access(request, "/generate_watermark", 200)
-    return jsonify({"watermark": hash_value})
+    return jsonify({"watermark": hash_value, "partner_id": partner_id, "user_id": user_id, "timestamp": timestamp})
 
 @app.route('/generate_honeytoken', methods=['GET'])
 def api_generate_honeytoken():
@@ -258,6 +260,19 @@ def partner_request_data():
         response[user_id] = {"status": "granted", "expiry": expiry}
         if response[user_id]["status"] == "granted":
             risk_score = partner_scores.get(partner_id, 0)
+            # Generate a timestamp for this access
+            access_time = datetime.utcnow().isoformat()
+            # Generate watermark as SHA-256 of 'partner|timestamp|user'
+            raw = f"{partner_id}|{access_time}|{user_id}"
+            watermark = hashlib.sha256(raw.encode()).hexdigest()
+            response[user_id]["watermark"] = watermark
+            # Store in access_logs for tracing
+            access_logs.append({
+                "partner": partner_id,
+                "user": user_id,
+                "timestamp": access_time,
+                "watermark": watermark
+            })
             # Enhanced notification system with threat levels
             if risk_score >= 80 or deception_state.get(partner_id) or partner_id in restricted_partners:
                 # RED notification - High threat level
@@ -804,6 +819,19 @@ def bulk_partner_request():
             })
             
             partner_response[user_id] = {"status": "granted", "expiry": expiry}
+            # Generate a timestamp for this access
+            access_time = datetime.utcnow().isoformat()
+            # Generate watermark as SHA-256 of 'partner|timestamp|user'
+            raw = f"{partner_id}|{access_time}|{user_id}"
+            watermark = hashlib.sha256(raw.encode()).hexdigest()
+            partner_response[user_id]["watermark"] = watermark
+            # Store in access_logs for tracing
+            access_logs.append({
+                "partner": partner_id,
+                "user": user_id,
+                "timestamp": access_time,
+                "watermark": watermark
+            })
             
             # Create notifications with threat levels
             if partner_response[user_id]["status"] == "granted":
@@ -851,6 +879,35 @@ def bulk_partner_request():
     
     log_access(request, "/bulk_partner_request", 200)
     return jsonify(bulk_response), 200
+
+@app.route('/verify_watermark', methods=['POST'])
+def verify_watermark():
+    data = request.get_json()
+    leaked = data.get('watermark')
+    for record in access_logs:
+        sample = f"{record['partner']}|{record['timestamp']}|{record['user']}"
+        generated = hashlib.sha256(sample.encode()).hexdigest()
+        if leaked == generated:
+            decode_log.append({
+                "leaked": leaked,
+                "matched": True,
+                "culprit": record["partner"],
+                "timestamp": record["timestamp"]
+            })
+            return jsonify({
+                "culprit": record["partner"],
+                "timestamp": record["timestamp"]
+            })
+    decode_log.append({
+        "leaked": leaked,
+        "matched": False,
+        "timestamp": datetime.utcnow().isoformat()
+    })
+    return jsonify({"result": "No match"}), 404
+
+@app.route('/decode_log', methods=['GET'])
+def get_decode_log():
+    return jsonify(decode_log)
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True) 

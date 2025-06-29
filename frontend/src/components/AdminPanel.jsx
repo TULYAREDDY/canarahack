@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getWithAuth, postWithAuth, getTrapLogs, getRestrictedPartners, getRiskScoreTraits, getPartnerTraits } from './api.js';
 import UserAccessLogViewer from './UserAccessLogViewer.jsx';
+import WatermarkTracePanel from './WatermarkTracePanel';
+import WatermarkDecodeLogTable from './WatermarkDecodeLogTable';
 
 export class AdminErrorBoundary extends React.Component {
   constructor(props) {
@@ -189,6 +191,11 @@ function AdminPanel({ addLog }) {
           </div>
         )}
         {riskError && <div style={{ color: 'red', marginTop: 8 }}>{riskError}</div>}
+      </div>
+      {/* Risk Score / Traits section here */}
+      <div style={{ marginTop: 32 }}>
+        <WatermarkTracePanel />
+        <WatermarkDecodeLogTable />
       </div>
       {loading && <div>Loading...</div>}
       {error && <div style={{ color: 'red' }}>{error}</div>}

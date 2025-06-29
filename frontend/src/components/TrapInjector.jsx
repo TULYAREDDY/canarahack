@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { trapInject } from './api.js';
+import html2pdf from 'html2pdf.js';
 
 function TrapInjector() {
   const [originalDoc, setOriginalDoc] = useState('');
@@ -9,6 +10,7 @@ function TrapInjector() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [watermark, setWatermark] = useState('e7fcfe3349d2b32b46c86b01...'); // Demo watermark
 
   const handleInjectTrap = async () => {
     if (!originalDoc.trim()) {
@@ -60,6 +62,11 @@ Please handle this data securely.
 Best regards,
 Data Team`);
     setTrapType('email');
+  };
+
+  const exportAsPDF = () => {
+    const element = document.getElementById('redacted-doc');
+    html2pdf().from(element).save('redacted_output.pdf');
   };
 
   return (
@@ -156,23 +163,28 @@ Data Team`);
                 fontSize: '0.9em'
               }}
             >
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? 'Copied!' : 'Copy' }
+            </button>
+            <button
+              onClick={exportAsPDF}
+              style={{
+                marginLeft: 8,
+                padding: '0.4em 0.8em',
+                background: '#16a34a',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                fontWeight: 600,
+                fontSize: '0.9em'
+              }}
+            >
+              📄 Export as PDF
             </button>
           </div>
-          <textarea
-            value={redactedDoc}
-            readOnly
-            style={{ 
-              width: '100%', 
-              minHeight: 120, 
-              padding: '0.8em', 
-              borderRadius: 6, 
-              border: '1px solid #cbd5e1',
-              backgroundColor: '#f8fafc',
-              fontFamily: 'monospace',
-              fontSize: '0.9em'
-            }}
-          />
+          <div id="redacted-doc" style={{ background: '#f9fafb', borderRadius: 8, padding: 12, minHeight: 120, fontFamily: 'monospace', whiteSpace: 'pre-wrap', position: 'relative' }}>
+            {redactedDoc}
+            <div style={{ display: 'none' }}>{`<!-- WATERMARK: ${watermark} -->`}</div>
+          </div>
         </div>
       )}
     </div>

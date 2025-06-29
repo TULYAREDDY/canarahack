@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { postWithAuth } from './api.js';
+import DataResponseSection from './DataResponseSection';
 
 function PartnerDataRequest({ addLog }) {
   const [partnerId, setPartnerId] = useState('Partner1');
@@ -56,7 +57,7 @@ function PartnerDataRequest({ addLog }) {
           <h4 style={{ color: '#16a34a' }}>User Data Access Results</h4>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
             <thead>
-              <tr style={{ background: '#f0fdf4' }}>
+              <tr style={{ background: '#f0f9ff' }}>
                 <th style={{ textAlign: 'left', padding: 6 }}>User</th>
                 <th style={{ textAlign: 'left', padding: 6 }}>Status</th>
                 <th style={{ textAlign: 'left', padding: 6 }}>Expiry</th>
@@ -68,7 +69,7 @@ function PartnerDataRequest({ addLog }) {
                 <tr key={user}>
                   <td style={{ padding: 6 }}>{user}</td>
                   <td style={{ padding: 6 }}>{info.status}</td>
-                  <td style={{ padding: 6 }}>{info.expiry || '-'}</td>
+                  <td style={{ padding: 6 }}>{info.expiry}</td>
                   <td style={{ padding: 6 }}>{info.reason || '-'}</td>
                 </tr>
               ))}
@@ -78,6 +79,38 @@ function PartnerDataRequest({ addLog }) {
       )}
       {error && <div style={{ color: 'red', marginTop: '1em' }}>{error}</div>}
     </div>
+  );
+}
+
+function DataRow({ user, info }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    if (info.watermark) {
+      navigator.clipboard.writeText(info.watermark);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+  return (
+    <tr>
+      <td style={{ padding: 6 }}>{user}</td>
+      <td style={{ padding: 6 }}>{info.status}</td>
+      <td style={{ padding: 6 }}>{info.expiry || '-'}</td>
+      <td style={{ padding: 6 }}>{info.reason || '-'}</td>
+      <td style={{ padding: 6 }}>
+        {info.watermark ? (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <code style={{ fontSize: '0.95em', wordBreak: 'break-all' }}>{info.watermark}</code>
+            <button onClick={handleCopy} style={{ fontSize: '0.95em', padding: '0.2em 0.7em', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 4 }}>
+              📋 Copy
+            </button>
+            {copied && <span style={{ color: '#16a34a', fontSize: '0.95em' }}>Copied!</span>}
+          </span>
+        ) : (
+          <span style={{ color: '#888' }}>-</span>
+        )}
+      </td>
+    </tr>
   );
 }
 
